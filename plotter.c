@@ -11,30 +11,31 @@
 #define TRUE 1
 #define FALSE 0
 
-#define X_INIT -ORIGIN_Y
-#define X_FINAL ORIGIN_Y
-#define X_COUNT (X_FINAL - X_INIT + 1)
+#define TEST_POINTS 500                          // number of x points to be taken
+#define X_INIT -ORIGIN_Y                        // where the x value will start from
+#define X_FINAL ORIGIN_Y                        // where the x value will end
+#define TOTAL_X_POINTS (X_FINAL - X_INIT + 1) 
 
-int f(int x) {
-    return 5 * sin(x);
+float f(float x) {
+    return log(x);
 }
 
 int contains(int x_value, int y_value) {
     int j = 0;
-    int x[X_COUNT];
-    for (int i = X_INIT; i <= X_FINAL; i++, j++) {
+    float increment = (TOTAL_X_POINTS / (float)TEST_POINTS);
+    float x[TEST_POINTS + 10];
+    for (float i = X_INIT; i <= X_FINAL; i += increment, j++) {
         x[j] = i;
     }
 
-    int x_size = sizeof(x) / 4;
-    int y[x_size];
+    float y[TEST_POINTS + 10];
 
-    for (int i = 0; i < x_size; i++) {
+    for (int i = 0; i < TEST_POINTS; i++) {
         y[i] = f(x[i]);
     }
 
-    for (int i = 0; i < x_size; i++) {
-        if (x[i] == x_value && y[i] == y_value) {
+    for (int i = 0; i < TEST_POINTS; i++) {
+        if ((int)x[i] == x_value && (int)y[i] == y_value) {
             return TRUE;
         }
     }

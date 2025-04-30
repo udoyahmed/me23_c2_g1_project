@@ -1,7 +1,7 @@
 #include<stdio.h>
 
 int main() {
-    int a[] = { 1,2,3 };
+    float a[] = { 1,2,3,4 };
 
     printf("%ld", sizeof(a));
     return 0;
