@@ -3,10 +3,11 @@
 
 #define clrscr() printf("\e[1;1H\e[2J")
 
-#define ROW 39                              // 43 max for full screen, 39 best
-#define COLUMN 65
+#define ROW 99                              // 43 max for full screen, 39 best
+#define COLUMN 135
 #define ORIGIN_X ((ROW-1)/2)                // also the Y limit
 #define ORIGIN_Y ((COLUMN-1)/2)             // also the X limit
+#define SCALE_GRAPH 10                      // every 10 box equals 1
 
 #define TRUE 1
 #define FALSE 0
@@ -17,7 +18,7 @@
 #define TOTAL_X_POINTS (X_FINAL - X_INIT + 1) 
 
 float f(float x) {
-    return log(x);
+    return sin(x);
 }
 
 int contains(int x_value, int y_value) {
@@ -35,7 +36,7 @@ int contains(int x_value, int y_value) {
     }
 
     for (int i = 0; i < TEST_POINTS; i++) {
-        if ((int)x[i] == x_value && (int)y[i] == y_value) {
+        if ((int)(x[i] * SCALE_GRAPH) == x_value && (int)(y[i] * SCALE_GRAPH) == y_value) {
             return TRUE;
         }
     }
@@ -57,10 +58,20 @@ void plot(void) {
             int current_y = -row + ORIGIN_X;                            // to actual points
 
             if (contains(current_x, current_y)) {                       // check if the point is to be plotted
-                printf("* ");
+                printf("O ");
                 continue;
             }
-            if (column == ORIGIN_Y && row == ORIGIN_X) printf("o");     // show origin if empty
+            if (column == ORIGIN_Y && row == ORIGIN_X) {      // show origin if empty
+                printf("o");
+                continue;
+            }
+            if (row == ORIGIN_X) {
+                printf("--");
+                continue;
+            }
+            if (column == ORIGIN_Y) {
+                printf("|");
+            }
             else printf("  ");
         }
         printf("\n");
