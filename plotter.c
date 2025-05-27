@@ -4,7 +4,7 @@
 #define clrscr() printf("\e[1;1H\e[2J")
 
 #define ROW 99                              // 43 max for full screen, 39 best
-#define COLUMN 135
+#define COLUMN 175
 #define ORIGIN_X ((ROW-1)/2)                // also the Y limit
 #define ORIGIN_Y ((COLUMN-1)/2)             // also the X limit
 #define SCALE_GRAPH 10                      // every 10 box equals 1
@@ -12,13 +12,13 @@
 #define TRUE 1
 #define FALSE 0
 
-#define TEST_POINTS 500                          // number of x points to be taken
-#define X_INIT -ORIGIN_Y                        // where the x value will start from
-#define X_FINAL ORIGIN_Y                        // where the x value will end
+#define TEST_POINTS 1000                                 // number of x points to be taken
+#define X_INIT -ORIGIN_Y                                // where the x value will start from
+#define X_FINAL ORIGIN_Y                                // where the x value will end
 #define TOTAL_X_POINTS (X_FINAL - X_INIT + 1) 
 
 float f(float x) {
-    return sin(x);
+    return x * x;
 }
 
 int contains(int x_value, int y_value) {
