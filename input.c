@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_COUNT 100
-
 #define clrscr() printf("\e[1;1H\e[2J")
 
 #define ORIGIN_Y 0
 #define SCALE_GRAPH 1
+
+int dataCount = 0;
 
 struct data {
     float flowRate[110];
@@ -17,6 +17,7 @@ struct data {
 };
 
 void plot(float* arr_x, float* arr_y);
+float BEP(float* flowRate, float* efficiency);
 
 int main() {
     FILE* f1;
@@ -30,6 +31,7 @@ int main() {
         } while (input1 < 1 || input1 > 2);
 
         if (input1 == 1) {
+            dataCount = 0;                                      // reset the value
             char fileName[100];
             printf("\nEnter file name (with extension): ");
 
@@ -43,10 +45,14 @@ int main() {
                 exit(1);
             }
 
-            for (int i = 0; i < DATA_COUNT; i++) {
-                if (fscanf(f1, "%f %f %f %f", &pump.flowRate[i], &pump.head[i], &pump.power[i], &pump.efficiency[i]) != 4) {
+            for (int i = 0; i < 110; i++) {                     // can check for upto 110 lines
+                int fscanfReturn = fscanf(f1, "%f %f %f %f", &pump.flowRate[i], &pump.head[i], &pump.power[i], &pump.efficiency[i]);
+                if (fscanfReturn == EOF) break;
+                if (fscanfReturn != 4) {
                     printf("\nSomething went wrong at line %d.", i + 1);
+                    exit(1);
                 }
+                dataCount++;
             }
 
             int input2 = 0;
@@ -58,21 +64,26 @@ int main() {
 
                 if (input2 == 1) {
                     plot(pump.flowRate, pump.head);
-                    for (int i = 0; i < DATA_COUNT / 2; i++) {
+                    for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
                     printf("Head vs Flow Rate\n");
                 }
                 else if (input2 == 2) {
                     plot(pump.flowRate, pump.efficiency);
-                    for (int i = 0; i < DATA_COUNT / 2; i++) {
+                    for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
                     printf("Efficiency vs Flow Rate\n");
+
+                    for (int i = 0; i < dataCount / 2; i++) {
+                        printf("  ");
+                    }
+                    printf("Best efficiency point (BEP): %.2f\n", BEP(pump.flowRate, pump.efficiency));
                 }
                 else if (input2 == 3) {
                     plot(pump.flowRate, pump.power);
-                    for (int i = 0; i < DATA_COUNT / 2; i++) {
+                    for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
                     printf("Power vs Flow Rate\n");
@@ -100,14 +111,14 @@ void plot(float* arr_x, float* arr_y) {
 
     int highestYvalue = 0, lowestYvalue = 100;
 
-    for (int i = 0; i < DATA_COUNT; i++) {
+    for (int i = 0; i < dataCount; i++) {
         if (arr_y[i] > highestYvalue) highestYvalue = arr_y[i];
         if (arr_y[i] < lowestYvalue) lowestYvalue = arr_y[i];
     }
 
     lowestYvalue /= 2;
 
-    int ROW = highestYvalue - lowestYvalue + 5, COLUMN = DATA_COUNT + 5;
+    int ROW = highestYvalue - lowestYvalue + 5, COLUMN = dataCount + 5;
     int ORIGIN_X = ROW - 1;
 
     clrscr();
@@ -149,4 +160,15 @@ void plot(float* arr_x, float* arr_y) {
     }
 
     printf("\n");
+}
+
+float BEP(float* flowRate, float* efficiency) {
+    float highestEfficiencyAt = 0, highestEfficiency = 0;
+    for (int i = 0; i < dataCount; i++) {
+        if (highestEfficiency < efficiency[i]) {
+            highestEfficiency = efficiency[i];
+            highestEfficiencyAt = flowRate[i];
+        }
+    }
+    return highestEfficiencyAt;
 }
