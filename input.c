@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define clrscr() printf("\e[1;1H\e[2J")
 
@@ -16,8 +17,8 @@ struct data {
     float efficiency[110];
 };
 
-void plot(float* arr_x, float* arr_y);
-float BEP(float* flowRate, float* efficiency);
+void plot(float* arr_x, float* arr_y, float* specialLines);
+void BEP(float* flowRate, float* efficiency, float* result);
 
 int main() {
     FILE* f1;
@@ -63,26 +64,34 @@ int main() {
                 } while (input2 < 1 && input2 > 4);
 
                 if (input2 == 1) {
-                    plot(pump.flowRate, pump.head);
+                    float specialLine[] = { -100, -100 };
+                    plot(pump.flowRate, pump.head, specialLine);
                     for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
                     printf("Head vs Flow Rate\n");
                 }
                 else if (input2 == 2) {
-                    plot(pump.flowRate, pump.efficiency);
-                    for (int i = 0; i < dataCount / 2; i++) {
+                    float bep[2];
+                    BEP(pump.flowRate, pump.efficiency, bep);
+                    plot(pump.flowRate, pump.efficiency, bep);
+                    for (int i = 0; i < (dataCount / 2) - 10; i++) {
                         printf("  ");
                     }
                     printf("Efficiency vs Flow Rate\n");
 
-                    for (int i = 0; i < dataCount / 2; i++) {
+                    for (int i = 0; i < (dataCount / 2) - 10; i++) {
                         printf("  ");
                     }
-                    printf("Best efficiency point (BEP): %.2f\n", BEP(pump.flowRate, pump.efficiency));
+                    printf("Best efficiency point (BEP): %.2f\n", bep[1]);
+                    for (int i = 0; i < (dataCount / 2) - 10; i++) {
+                        printf("  ");
+                    }
+                    printf("The BEP is marked using the letter \"B\"");
                 }
                 else if (input2 == 3) {
-                    plot(pump.flowRate, pump.power);
+                    float specialLine[] = { -100, -100 };
+                    plot(pump.flowRate, pump.power, specialLine);
                     for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
@@ -106,7 +115,7 @@ int main() {
     return 0;
 }
 
-void plot(float* arr_x, float* arr_y) {
+void plot(float* arr_x, float* arr_y, float* specialLines) {
     clrscr();
 
     int highestYvalue = 0, lowestYvalue = 100;
@@ -139,10 +148,15 @@ void plot(float* arr_x, float* arr_y) {
             int current_x = column - ORIGIN_Y;                          // convert the row and column value
             int current_y = -row + ORIGIN_X;                            // to actual points
 
+            if (current_x == (int)(specialLines[1]) && current_y == (int)specialLines[0] - lowestYvalue) {
+                printf("B ");
+                continue;
+            }
+
             int flag = 0;
 
             for (int i = 0; i < 100; i++) {
-                if (current_x == ((int)arr_x[i] * SCALE_GRAPH) && current_y == (int)arr_y[i] - lowestYvalue) {
+                if (current_x == ((int)arr_x[i]) && current_y == (int)arr_y[i] - lowestYvalue) {
                     printf("O ");
                     flag = 1;
                 }
@@ -162,13 +176,13 @@ void plot(float* arr_x, float* arr_y) {
     printf("\n");
 }
 
-float BEP(float* flowRate, float* efficiency) {
-    float highestEfficiencyAt = 0, highestEfficiency = 0;
+void BEP(float* flowRate, float* efficiency, float* result) {
+    *(result) = 0;              // holds highest efficiency
+    *(result + 1) = 0;          // holds flowrate
     for (int i = 0; i < dataCount; i++) {
-        if (highestEfficiency < efficiency[i]) {
-            highestEfficiency = efficiency[i];
-            highestEfficiencyAt = flowRate[i];
+        if (*(result) < efficiency[i]) {
+            *(result) = efficiency[i];
+            *(result + 1) = flowRate[i];
         }
     }
-    return highestEfficiencyAt;
 }
