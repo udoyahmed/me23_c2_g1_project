@@ -57,7 +57,7 @@ int main() {
 
             // fileName[strcspn(fileName, "\n")] = '\0';
 
-            strcpy(fileName, "performance_data_no_cavitation.txt");
+            strcpy(fileName, "performance_data.txt");
 
             if ((f1 = fopen(fileName, "r")) == NULL) {
                 printf("\nError opening the file.");
@@ -178,6 +178,7 @@ int main() {
                 }
 
                 else if (input2 == 6) {         // show summary table
+                    summaryTable(pump.flowRate, pump.head, pump.power, pump.efficiency);
                     pressAnyKeytoContinue();
                 }
 
@@ -345,7 +346,33 @@ void showTable(float* flowRate, float* head, float* power, float* efficiency) {
 }
 
 void summaryTable(float* flowRate, float* head, float* power, float* efficiency) {
+    float temp_result[3];
+    minima_maxima(flowRate, head, temp_result);
 
+    printf("+---------------------------+------------+\n");
+    printf("| Maximum Head              | %6.2f m   |\n", temp_result[0]);
+    printf("| Minimum Head              | %6.2f m   |\n", temp_result[2]);
+
+    minima_maxima(flowRate, power, temp_result);
+
+    printf("| Maximum Power             | %6.2f W   |\n", temp_result[0]);
+    printf("| Minimum Power             | %6.2f W   |\n", temp_result[2]);
+
+    minima_maxima(flowRate, efficiency, temp_result);
+
+    printf("| Maximum Efficiency        | %6.2f %%   |\n", temp_result[0]);
+    printf("| Minimum Efficieny         | %6.2f %%   |\n", temp_result[2]);
+    printf("| BEP Flow Rate             | %6.2f L/s |\n", temp_result[1]);
+    printf("| Shut-off Condition        | %6.2f m   |\n", flowRate[0]);
+
+    overloadCondition(flowRate, power, temp_result);
+
+    printf("| Overload Start Flowrate   | %6.2f L/s |\n", temp_result[1]);
+
+    cavitationOnset(flowRate, head, temp_result);
+
+    printf("| Cavitation Onset Flowrate | %6.2f L/s |\n", temp_result[1]);
+    printf("+---------------------------+------------+\n");
 }
 
 void generateReport(float* flowRate, float* head, float* power, float* efficiency) {
@@ -365,6 +392,36 @@ void generateReport(float* flowRate, float* head, float* power, float* efficienc
     }
 
     fprintf(f2, "+-----------+--------+---------+------------+\n");
+    fprintf(f2, "\nSummary Table:\n\n");
+
+    float temp_result[3];
+    minima_maxima(flowRate, head, temp_result);
+
+    fprintf(f2, "+---------------------------+------------+\n");
+    fprintf(f2, "| Maximum Head              | %6.2f m   |\n", temp_result[0]);
+    fprintf(f2, "| Minimum Head              | %6.2f m   |\n", temp_result[2]);
+
+    minima_maxima(flowRate, power, temp_result);
+
+    fprintf(f2, "| Maximum Power             | %6.2f W   |\n", temp_result[0]);
+    fprintf(f2, "| Minimum Power             | %6.2f W   |\n", temp_result[2]);
+
+    minima_maxima(flowRate, efficiency, temp_result);
+
+    fprintf(f2, "| Maximum Efficiency        | %6.2f %%   |\n", temp_result[0]);
+    fprintf(f2, "| Minimum Efficieny         | %6.2f %%   |\n", temp_result[2]);
+    fprintf(f2, "| BEP Flow Rate             | %6.2f L/s |\n", temp_result[1]);
+    fprintf(f2, "| Shut-off Condition        | %6.2f m   |\n", flowRate[0]);
+
+    overloadCondition(flowRate, power, temp_result);
+
+    fprintf(f2, "| Overload Start Flowrate   | %6.2f L/s |\n", temp_result[1]);
+
+    cavitationOnset(flowRate, head, temp_result);
+
+    fprintf(f2, "| Cavitation Onset Flowrate | %6.2f L/s |\n", temp_result[1]);
+    fprintf(f2, "+---------------------------+------------+\n");
+
     fclose(f2);
 }
 
