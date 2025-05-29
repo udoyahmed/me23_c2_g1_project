@@ -3,7 +3,15 @@
 #include <string.h>
 #include <math.h>
 
-#define clrscr() printf("\e[1;1H\e[2J")
+// only for linux 
+
+#include <termios.h>
+#include <unistd.h>
+int getch(void);
+
+// comment these lines above for windows / codeblocks
+
+// #define clrscr() printf("\e[1;1H\e[2J")
 
 #define ORIGIN_Y 0
 #define SCALE_GRAPH 1
@@ -17,8 +25,12 @@ struct data {
     float efficiency[110];
 };
 
+void clearConsole(void);
 void plot(float* arr_x, float* arr_y, float* specialLines);
 void BEP(float* flowRate, float* efficiency, float* result);
+void showTable(float* flowRate, float* head, float* power, float* efficiency);
+void generateReport(float* flowRate, float* head, float* power, float* efficiency);
+void pressAnyKeytoContinue(void);
 
 int main() {
     FILE* f1;
@@ -27,6 +39,7 @@ int main() {
     while (1) {
         int input1 = 0;
         do {
+            clearConsole();
             printf("\n1. Enter a file,\n2. Exit.\n\nChoice: ");
             scanf("%d", &input1);
         } while (input1 < 1 || input1 > 2);
@@ -50,7 +63,7 @@ int main() {
                 int fscanfReturn = fscanf(f1, "%f %f %f %f", &pump.flowRate[i], &pump.head[i], &pump.power[i], &pump.efficiency[i]);
                 if (fscanfReturn == EOF) break;
                 if (fscanfReturn != 4) {
-                    printf("\nSomething went wrong at line %d.", i + 1);
+                    printf("\nSomething went wrong while reading line %d.", i + 1);
                     exit(1);
                 }
                 dataCount++;
@@ -59,19 +72,22 @@ int main() {
             int input2 = 0;
             while (1) {
                 do {
-                    printf("\nPlot the following curves:\n1. Head vs Flow Rate\n2. Efficiency vs Flow Rate\n3. Power vs Flow Rate\n4. Exit\n\nChoice: ");
+                    clearConsole();
+                    printf("\nPlots:\n1. Head vs Flow Rate\n2. Efficiency vs Flow Rate\n3. Power vs Flow Rate\n");
+                    printf("\nTables:\n4. Show Table of the points\n5. Show Summery Table\n\n6. Generate Report\n7. Exit\n\nChoice: ");
                     scanf("%d", &input2);
-                } while (input2 < 1 && input2 > 4);
+                } while (input2 < 1 && input2 > 8);
 
-                if (input2 == 1) {
+                if (input2 == 1) {                                  // head vs flow rate
                     float specialLine[] = { -100, -100 };
                     plot(pump.flowRate, pump.head, specialLine);
                     for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
                     printf("Head vs Flow Rate\n");
+                    pressAnyKeytoContinue();
                 }
-                else if (input2 == 2) {
+                else if (input2 == 2) {                             // efficiency vs flow rate
                     float bep[2];
                     BEP(pump.flowRate, pump.efficiency, bep);
                     plot(pump.flowRate, pump.efficiency, bep);
@@ -87,18 +103,33 @@ int main() {
                     for (int i = 0; i < (dataCount / 2) - 10; i++) {
                         printf("  ");
                     }
-                    printf("The BEP is marked using the letter \"B\"");
+                    printf("The BEP is marked using the letter \"B\"\n");
+                    pressAnyKeytoContinue();
                 }
-                else if (input2 == 3) {
+                else if (input2 == 3) {                             // power vs flow rate
                     float specialLine[] = { -100, -100 };
                     plot(pump.flowRate, pump.power, specialLine);
                     for (int i = 0; i < dataCount / 2; i++) {
                         printf("  ");
                     }
                     printf("Power vs Flow Rate\n");
+                    pressAnyKeytoContinue();
+                }
+                else if (input2 == 4) {         // show table
+                    showTable(pump.flowRate, pump.head, pump.power, pump.efficiency);
+                    pressAnyKeytoContinue();
+                }
+                else if (input2 == 5) {         // show summary table
+                    pressAnyKeytoContinue();
+                }
+                else if (input2 == 6) {         // generate report
+                    generateReport(pump.flowRate, pump.head, pump.power, pump.efficiency);
+                    printf("\nReport generated successfully at report.txt.\n\n");
+                    pressAnyKeytoContinue();
                 }
                 else {
                     printf("\nYour can exit or input a new file: \n");
+                    pressAnyKeytoContinue();
                     break;
                 }
             }
@@ -115,8 +146,12 @@ int main() {
     return 0;
 }
 
+// add a plot Code system to differentiate between plots
+// with the plot code of efficiency, it will plot the bep 
+// whereas, for head, it will plot operating range etc.
+
 void plot(float* arr_x, float* arr_y, float* specialLines) {
-    clrscr();
+    clearConsole();
 
     int highestYvalue = 0, lowestYvalue = 100;
 
@@ -129,8 +164,6 @@ void plot(float* arr_x, float* arr_y, float* specialLines) {
 
     int ROW = highestYvalue - lowestYvalue + 5, COLUMN = dataCount + 5;
     int ORIGIN_X = ROW - 1;
-
-    clrscr();
 
     for (int row = 0; row < ROW; row++) {                               // row is y value
         for (int column = 0; column < COLUMN; column++) {               // column is x value
@@ -177,12 +210,80 @@ void plot(float* arr_x, float* arr_y, float* specialLines) {
 }
 
 void BEP(float* flowRate, float* efficiency, float* result) {
-    *(result) = 0;              // holds highest efficiency
-    *(result + 1) = 0;          // holds flowrate
+    result[0] = 0;              // holds highest efficiency
+    result[1] = 0;              // holds flowrate
     for (int i = 0; i < dataCount; i++) {
-        if (*(result) < efficiency[i]) {
-            *(result) = efficiency[i];
-            *(result + 1) = flowRate[i];
+        if (result[0] < efficiency[i]) {
+            result[0] = efficiency[i];
+            result[1] = flowRate[i];
         }
     }
+}
+
+void showTable(float* flowRate, float* head, float* power, float* efficiency) {
+    printf("+-----------+--------+---------+------------+\n");
+    printf("| Flow Rate |  Head  |  Power  | Efficiency |\n");
+    printf("+-----------+--------+---------+------------+\n");
+
+    for (int i = 0; i < dataCount; i++) {
+        printf("| %9.2f | %6.2f | %7.2f | %10.2f |\n", flowRate[i], head[i], power[i], efficiency[i]);
+    }
+    printf("+-----------+--------+---------+------------+\n");
+}
+
+void generateReport(float* flowRate, float* head, float* power, float* efficiency) {
+    FILE* f2;
+
+    if ((f2 = fopen("report.txt", "w")) == NULL) {
+        printf("Error creating report.txt.");
+        exit(1);
+    }
+
+    fprintf(f2, "+-----------+--------+---------+------------+\n");
+    fprintf(f2, "| Flow Rate |  Head  |  Power  | Efficiency |\n");
+    fprintf(f2, "+-----------+--------+---------+------------+\n");
+
+    for (int i = 0; i < dataCount; i++) {
+        fprintf(f2, "| %9.2f | %6.2f | %7.2f | %10.2f |\n", flowRate[i], head[i], power[i], efficiency[i]);
+    }
+
+    fprintf(f2, "+-----------+--------+---------+------------+\n");
+    fclose(f2);
+}
+
+void pressAnyKeytoContinue(void) {
+    printf("Press any key to continue...");
+    while (getchar() != '\n');
+    getch();
+}
+
+void clearConsole(void) {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+// comment this function out for windows / codeblocks
+
+int getch(void) {
+    struct termios oldt, newt;
+    int ch;
+
+    // get current terminal settings
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+
+    // disable canonical mode and echo
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    // read character
+    ch = getchar();
+
+    // restore terminal settings
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
+    return ch;
 }
