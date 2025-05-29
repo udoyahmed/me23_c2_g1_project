@@ -50,14 +50,12 @@ int main() {
 
 
             char fileName[100];
-            // printf("\nEnter file name (with extension): ");
+            printf("\nEnter file name (with extension): ");
 
-            // while (getchar() != '\n');                          // clear the buffer
-            // fgets(fileName, sizeof(fileName), stdin);
+            while (getchar() != '\n');                          // clear the buffer
+            fgets(fileName, sizeof(fileName), stdin);
 
-            // fileName[strcspn(fileName, "\n")] = '\0';
-
-            strcpy(fileName, "performance_data.txt");
+            fileName[strcspn(fileName, "\n")] = '\0';
 
             if ((f1 = fopen(fileName, "r")) == NULL) {
                 printf("\nError opening the file.");
