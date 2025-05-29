@@ -4,20 +4,19 @@
 
 #include <stdlib.h>
 
-void clearConsole(void) {
-#ifdef _WIN32
-    system("cls");
-#else
-    system("clear");
-#endif
-}
-
 int main() {
-    clearConsole();
-    printf("Press any key to continue..\n");
-    char ch = getchar();
-
-    printf("Continued.");
+    printf("+--------------------+-------+\n");
+    printf("| Maximum Head       | 23.32 |\n");
+    printf("| Minimum Head       | 23.32 |\n");
+    printf("| Maximum Power      | 23.32 |\n");
+    printf("| Minimum Power      | 23.32 |\n");
+    printf("| Maximum Efficiency | 23.32 |\n");
+    printf("| Minimum Efficieny  | 23.32 |\n");
+    printf("| BEP Flow Rate      | 23.32 |\n");
+    printf("| Shut-off Condition | 23.32 |\n");
+    printf("| Overload Start     | 23.32 |\n");
+    printf("| Cavitation Onset   | 23.32 |\n");
+    printf("+--------------------+-------+\n");
     return 0;
 }
 
