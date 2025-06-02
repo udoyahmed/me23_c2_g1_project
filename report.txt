@@ -103,7 +103,6 @@
 |    100.00 |  10.20 |  139.63 |      60.71 |
 +-----------+--------+---------+------------+
 
-
 Summary Table:
 
 +---------------------------+------------+
@@ -112,9 +111,9 @@ Summary Table:
 | Maximum Power             | 139.63 W   |
 | Minimum Power             |   9.81 W   |
 | Maximum Efficiency        |  80.74 %   |
-| Minimum Efficieny         |  59.38 %   |
+| Minimum Efficiency        |  59.38 %   |
 | BEP Flow Rate             |  51.51 L/s |
-| Shut-off Condition        |   0.00 m   |
+| Shut-off Condition        |  50.88 m   |
 | Overload Start Flowrate   |  83.84 L/s |
 | Cavitation Onset Flowrate |  85.86 L/s |
 +---------------------------+------------+

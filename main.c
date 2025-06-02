@@ -41,7 +41,7 @@ int main() {
         int input1 = 0;
         do {
             clearConsole();
-            printf("\n1. Enter a file,\n2. Exit.\n\nChoice: ");
+            printf("\n1. Enter a file\n2. Exit.\n\nChoice: ");
             scanf("%d", &input1);
         } while (input1 < 1 || input1 > 2);
 
@@ -52,7 +52,8 @@ int main() {
             char fileName[100];
             printf("\nEnter file name (with extension): ");
 
-            while (getchar() != '\n');                          // clear the buffer
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);        // clear the buffer
             fgets(fileName, sizeof(fileName), stdin);
 
             fileName[strcspn(fileName, "\n")] = '\0';
@@ -79,7 +80,7 @@ int main() {
                     printf("\nPlots:\n1. Head vs Flow Rate\n2. Efficiency vs Flow Rate\n3. Power vs Flow Rate\n4. Operating Range\n");
                     printf("\nTables:\n5. Show Table of the points\n6. Show Summery Table\n\n7. Generate Report\n8. Exit\n\nChoice: ");
                     scanf("%d", &input2);
-                } while (input2 < 1 && input2 > 8);
+                } while (input2 < 1 || input2 > 8);
 
                 if (input2 == 1) {                                  // head vs flow rate
                     float cavitation[3];
@@ -199,10 +200,6 @@ int main() {
             return 0;
         }
     }
-
-    fclose(f1);
-    printf("\n");
-    return 0;
 }
 
 void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
@@ -233,6 +230,11 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
                 continue;
             }
 
+            if (row == ORIGIN_X) {
+                printf("--");
+                continue;
+            }
+
             int current_x = column - ORIGIN_Y;                          // convert the row and column value
             int current_y = -row + ORIGIN_X;                            // to actual points
 
@@ -251,21 +253,16 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
             }
 
             int flag = 0;
-
             for (int i = 0; i < 100; i++) {
                 if (current_x == ((int)arr_x[i]) && current_y == (int)arr_y[i] - lowestYvalue) {
                     printf("O ");
                     flag = 1;
+                    break;
                 }
             }
-
             if (flag) continue;
 
-
-            if (row == ORIGIN_X) {
-                printf("--");
-            }
-            else printf("  ");
+            printf("  ");
         }
         printf("\n");
     }
@@ -344,8 +341,12 @@ void showTable(float* flowRate, float* head, float* power, float* efficiency) {
 }
 
 void summaryTable(float* flowRate, float* head, float* power, float* efficiency) {
+    clearConsole();
+
     float temp_result[3];
     minima_maxima(flowRate, head, temp_result);
+
+    printf("Summary Table:\n\n");
 
     printf("+---------------------------+------------+\n");
     printf("| Maximum Head              | %6.2f m   |\n", temp_result[0]);
@@ -361,7 +362,8 @@ void summaryTable(float* flowRate, float* head, float* power, float* efficiency)
     printf("| Maximum Efficiency        | %6.2f %%   |\n", temp_result[0]);
     printf("| Minimum Efficieny         | %6.2f %%   |\n", temp_result[2]);
     printf("| BEP Flow Rate             | %6.2f L/s |\n", temp_result[1]);
-    printf("| Shut-off Condition        | %6.2f m   |\n", flowRate[0]);
+
+    printf("| Shut-off Condition        | %6.2f m   |\n", head[0]);
 
     overloadCondition(flowRate, power, temp_result);
 
@@ -407,9 +409,9 @@ void generateReport(float* flowRate, float* head, float* power, float* efficienc
     minima_maxima(flowRate, efficiency, temp_result);
 
     fprintf(f2, "| Maximum Efficiency        | %6.2f %%   |\n", temp_result[0]);
-    fprintf(f2, "| Minimum Efficieny         | %6.2f %%   |\n", temp_result[2]);
+    fprintf(f2, "| Minimum Efficiency        | %6.2f %%   |\n", temp_result[2]);
     fprintf(f2, "| BEP Flow Rate             | %6.2f L/s |\n", temp_result[1]);
-    fprintf(f2, "| Shut-off Condition        | %6.2f m   |\n", flowRate[0]);
+    fprintf(f2, "| Shut-off Condition        | %6.2f m   |\n", head[0]);
 
     overloadCondition(flowRate, power, temp_result);
 
@@ -425,7 +427,8 @@ void generateReport(float* flowRate, float* head, float* power, float* efficienc
 
 void pressAnyKeytoContinue(void) {
     printf("Press any key to continue...");
-    while (getchar() != '\n');
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {}
     getch();
 }
 
