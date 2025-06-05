@@ -78,7 +78,7 @@ int main() {
                 do {
                     clearConsole();
                     printf("\nPlots:\n1. Head vs Flow Rate\n2. Efficiency vs Flow Rate\n3. Power vs Flow Rate\n4. Operating Range\n");
-                    printf("\nTables:\n5. Show Table of the points\n6. Show Summery Table\n\n7. Generate Report\n8. Exit\n\nChoice: ");
+                    printf("\nTables:\n5. Show Table of the points\n6. Show Summary Table\n\n7. Generate Report\n8. Exit\n\nChoice: ");
                     scanf("%d", &input2);
                 } while (input2 < 1 || input2 > 8);
 
