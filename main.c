@@ -11,8 +11,9 @@ int getch(void);
 
 // comment these lines above for windows / codeblocks
 
-#define ORIGIN_Y 0
-#define SCALE_GRAPH 1
+#define EXPECTED_STANDARD_DEVIATION 10
+#define SHOULD_SCALE_WHEN_STD_X 5
+#define SHOULD_SCALE_WHEN_STD_Y 1
 
 int dataCount = 0;
 
@@ -23,15 +24,19 @@ struct data {
     float efficiency[110];
 };
 
+void addSpaces(void);
 void clearConsole(void);
+void pressAnyKeytoContinue(void);
+void maxima_minima_plot(float* array, float* result);
+void cavitationOnset(float* flowRate, float* head, float* result);
+void overloadCondition(float* flowRate, float* power, float* result);
 void plot(float* arr_x, float* arr_y, float* specialLines, char plotID);
 void minima_maxima(float* flowRate, float* power_head_eff, float* result);
 void showTable(float* flowRate, float* head, float* power, float* efficiency);
 void summaryTable(float* flowRate, float* head, float* power, float* efficiency);
 void generateReport(float* flowRate, float* head, float* power, float* efficiency);
-void cavitationOnset(float* flowRate, float* head, float* result);
-void overloadCondition(float* flowRate, float* power, float* result);
-void pressAnyKeytoContinue(void);
+float average(float* points);
+float standard_deviation(float* array);
 
 int main() {
     FILE* f1;
@@ -47,7 +52,6 @@ int main() {
 
         if (input1 == 1) {
             dataCount = 0;                                      // reset the value
-
 
             char fileName[100];
             printf("\nEnter file name (with extension): ");
@@ -86,25 +90,17 @@ int main() {
                     float cavitation[3];
                     cavitationOnset(pump.flowRate, pump.head, cavitation);
                     plot(pump.flowRate, pump.head, cavitation, 'H');
-                    for (int i = 0; i < dataCount / 2 - 10; i++) {
-                        printf("  ");
-                    }
+                    addSpaces();
                     printf("Head vs Flow Rate\n");
 
                     if (cavitation[0] != -1) {
-                        for (int i = 0; i < dataCount / 2 - 10; i++) {
-                            printf("  ");
-                        }
+                        addSpaces();
                         printf("Cavitation Onset at %.2f L/s\n", cavitation[1]);
-                        for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                            printf("  ");
-                        }
+                        addSpaces();
                         printf("The Cavitation Onset is marked using the letter \"H\"\n");
                     }
                     else {
-                        for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                            printf("  ");
-                        }
+                        addSpaces();
                         printf("No Cavitation Onset!\n");
                     }
                     pressAnyKeytoContinue();
@@ -114,18 +110,14 @@ int main() {
                     float bep[3];
                     minima_maxima(pump.flowRate, pump.efficiency, bep);
                     plot(pump.flowRate, pump.efficiency, bep, 'E');
-                    for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                        printf("  ");
-                    }
+
+                    addSpaces();
                     printf("Efficiency vs Flow Rate\n");
 
-                    for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                        printf("  ");
-                    }
+                    addSpaces();
                     printf("Best efficiency point (BEP): %.2f L/s\n", bep[1]);
-                    for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                        printf("  ");
-                    }
+
+                    addSpaces();
                     printf("The BEP is marked using the letter \"E\"\n");
                     pressAnyKeytoContinue();
                 }
@@ -134,24 +126,18 @@ int main() {
                     float overload[3];
                     overloadCondition(pump.flowRate, pump.power, overload);
                     plot(pump.flowRate, pump.power, overload, 'P');
-                    for (int i = 0; i < dataCount / 2 - 10; i++) {
-                        printf("  ");
-                    }
+
+                    addSpaces();
                     printf("Power vs Flow Rate\n");
                     if (overload[0] != -1) {
-                        for (int i = 0; i < dataCount / 2 - 10; i++) {
-                            printf("  ");
-                        }
+                        addSpaces();
                         printf("Overload Point at %.2f L/s\n", overload[1]);
-                        for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                            printf("  ");
-                        }
+
+                        addSpaces();
                         printf("The Overload Point is marked using the letter \"P\"\n");
                     }
                     else {
-                        for (int i = 0; i < (dataCount / 2) - 10; i++) {
-                            printf("  ");
-                        }
+                        addSpaces();
                         printf("No Overload Condition!\n");
                     }
                     pressAnyKeytoContinue();
@@ -160,14 +146,18 @@ int main() {
                     float cavitation[3];
                     cavitationOnset(pump.flowRate, pump.head, cavitation);
                     plot(pump.flowRate, pump.head, cavitation, 'O');
-                    for (int i = 0; i < dataCount / 2 - 10; i++) {
-                        printf("  ");
-                    }
+
+                    addSpaces();
                     printf("Head vs Flow Rate\n");
-                    for (int i = 0; i < dataCount / 2 - 10; i++) {
-                        printf("  ");
-                    }
-                    printf("Operating range is shown by the two straight lines.\n");
+
+                    addSpaces();
+                    printf("Operating range is shown by the two straight lines made of ""+"".\n");
+
+                    addSpaces();
+                    printf("Minimum Threshold: %f m, Maximum Threshold: %f m.\n", pump.head[1], cavitation[1]);
+
+                    addSpaces();
+                    printf("Unsafe operating zones are indicated by the letter ""U"".\n");
                     pressAnyKeytoContinue();
                 }
 
@@ -205,57 +195,76 @@ int main() {
 void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     clearConsole();
 
-    int highestYvalue = 0, lowestYvalue = 100;
+    // scaling for y axis 
+
+    float std_y = standard_deviation(arr_y);
+    float multiplying_factor = (std_y < SHOULD_SCALE_WHEN_STD_Y) ? EXPECTED_STANDARD_DEVIATION / std_y : 1;
 
     for (int i = 0; i < dataCount; i++) {
-        if (arr_y[i] > highestYvalue) highestYvalue = arr_y[i];
-        if (arr_y[i] < lowestYvalue) lowestYvalue = arr_y[i];
+        arr_y[i] *= multiplying_factor;
     }
 
-    lowestYvalue /= 2;
+    // scaling for x axis 
 
-    int ROW = highestYvalue - lowestYvalue + 5, COLUMN = dataCount + 5;
-    int ORIGIN_X = ROW - 1;
+    float std_x = standard_deviation(arr_x);
+    multiplying_factor = (std_x < SHOULD_SCALE_WHEN_STD_X) ? EXPECTED_STANDARD_DEVIATION / std_x : 1;
+
+    for (int i = 0; i < dataCount; i++) {
+        arr_x[i] *= multiplying_factor;
+    }
+
+    float max_min_y[3], max_min_x[3];
+    maxima_minima_plot(arr_y, max_min_y);
+    maxima_minima_plot(arr_x, max_min_x);
+
+    // +10 here and +5 when we compare to keep 5 blank spaces below and above the data points
+
+    int ROW = max_min_y[1] - max_min_y[0] + 10;
+    int COLUMN = max_min_x[1] - max_min_x[0] + 10;
+
+    int X_CENTER = 0, Y_CENTER = ROW - 1;
 
     for (int row = 0; row < ROW; row++) {                               // row is y value
         for (int column = 0; column < COLUMN; column++) {               // column is x value
 
-            if (column == ORIGIN_Y && row == ORIGIN_X) {      // show origin if empty
-                printf("o");
+            if (row == Y_CENTER && column == X_CENTER) {
+                printf("O");
                 continue;
             }
-
-            if (column == ORIGIN_Y) {
+            if (row == Y_CENTER) {
+                printf("--");
+                continue;
+            }
+            if (column == X_CENTER) {
                 printf("|");
                 continue;
             }
 
-            if (row == ORIGIN_X) {
-                printf("--");
-                continue;
-            }
-
-            int current_x = column - ORIGIN_Y;                          // convert the row and column value
-            int current_y = -row + ORIGIN_X;                            // to actual points
+            int current_x = column - X_CENTER;                          // convert the row and column value
+            int current_y = -row + Y_CENTER;                            // to actual points
 
             if (plotID == 'E' || plotID == 'H' || plotID == 'P') {
-                if (current_x == (int)(specialLines[1]) && current_y == (int)specialLines[0] - lowestYvalue) {
+                if (current_x == (int)(specialLines[1] - max_min_x[0] + 5) && current_y == (int)(specialLines[0] - max_min_y[0] + 5)) {
                     printf("%c ", plotID);
                     continue;
                 }
             }
 
             if (plotID == 'O') {
-                if (current_x == 2 || current_x == (int)specialLines[1] - 1) {
-                    printf("+");
+                if (current_x == (int)(arr_x[1] - max_min_x[0] + 5) || current_x == (int)(specialLines[1] - max_min_x[0] + 5)) {
+                    printf("+ ");
+                    continue;
+                }
+                if (current_x < (int)(arr_x[1] - max_min_x[0] + 5) || current_x >(int)(specialLines[1] - max_min_x[0] + 5)) {
+                    printf("U ");
                     continue;
                 }
             }
 
             int flag = 0;
-            for (int i = 0; i < 100; i++) {
-                if (current_x == ((int)arr_x[i]) && current_y == (int)arr_y[i] - lowestYvalue) {
-                    printf("O ");
+            for (int i = 0; i < dataCount; i++) {
+                if (current_x == (int)(arr_x[i] - max_min_x[0] + 5) && current_y == (int)(arr_y[i] - max_min_y[0] + 5)) {
+                    printf("● ");
                     flag = 1;
                     break;
                 }
@@ -271,9 +280,9 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
 }
 
 void minima_maxima(float* flowRate, float* power_head_eff, float* result) {
-    result[0] = 0;              // holds highest efficiency
-    result[1] = 0;              // holds flowrate
-    result[2] = 1000;           // holds lowest efficiency
+    result[0] = 0;              // holds the highest efficiency/power/head
+    result[1] = 0;              // holds the corresponding flow rate
+    result[2] = 1000;           // holds the lowest efficiency/power/head
     for (int i = 0; i < dataCount; i++) {
         if (result[0] < power_head_eff[i]) {
             result[0] = power_head_eff[i];
@@ -284,6 +293,34 @@ void minima_maxima(float* flowRate, float* power_head_eff, float* result) {
         }
     }
 }
+
+float average(float* points) {
+    float sum = 0;
+    for (int i = 0; i < dataCount; i++) {
+        sum += points[i];
+    }
+    return sum / dataCount;
+}
+
+float standard_deviation(float* array) {
+    float mean = average(array), sum = 0;
+    for (int i = 0; i < dataCount; i++) {
+        sum += ((array[i] - mean) * (array[i] - mean));
+    }
+    sum /= (dataCount - 1);     // sample standard deviation not population
+    return sqrt(sum);
+}
+
+void maxima_minima_plot(float* array, float* result) {
+    float max = 0, min = 1000;
+    for (int i = 0; i < dataCount; i++) {
+        if (array[i] > max) max = array[i];
+        if (array[i] < min) min = array[i];
+    }
+    result[0] = min;            // holds the minimum value
+    result[1] = max;            // holds the maximum value
+}
+
 
 void cavitationOnset(float* flowRate, float* head, float* result) {
     float averageHeadDrop = 0;
@@ -302,9 +339,9 @@ void cavitationOnset(float* flowRate, float* head, float* result) {
             return;
         }
     }
-    result[0] = -1;
+    result[0] = -100;
     result[1] = flowRate[dataCount - 1];
-    result[2] = -1;
+    result[2] = -100;
 }
 
 void overloadCondition(float* flowRate, float* power, float* result) {
@@ -330,6 +367,8 @@ void overloadCondition(float* flowRate, float* power, float* result) {
 }
 
 void showTable(float* flowRate, float* head, float* power, float* efficiency) {
+    clearConsole();
+
     printf("+-----------+--------+---------+------------+\n");
     printf("| Flow Rate |  Head  |  Power  | Efficiency |\n");
     printf("+-----------+--------+---------+------------+\n");
@@ -392,6 +431,7 @@ void generateReport(float* flowRate, float* head, float* power, float* efficienc
     }
 
     fprintf(f2, "+-----------+--------+---------+------------+\n");
+
     fprintf(f2, "\nSummary Table:\n\n");
 
     float temp_result[3];
@@ -423,6 +463,12 @@ void generateReport(float* flowRate, float* head, float* power, float* efficienc
     fprintf(f2, "+---------------------------+------------+\n");
 
     fclose(f2);
+}
+
+void addSpaces(void) {
+    for (int i = 0; i < dataCount / 2 - 10; i++) {
+        printf("  ");
+    }
 }
 
 void pressAnyKeytoContinue(void) {
