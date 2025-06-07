@@ -154,7 +154,7 @@ int main() {
                     printf("Operating range is shown by the two straight lines made of ""+"".\n");
 
                     addSpaces();
-                    printf("Minimum Threshold: %f m, Maximum Threshold: %f m.\n", pump.head[1], cavitation[1]);
+                    printf("Minimum Threshold: %.2f m, Maximum Threshold: %.2f m.\n", pump.head[1], cavitation[1]);
 
                     addSpaces();
                     printf("Unsafe operating zones are indicated by the letter ""U"".\n");
@@ -217,15 +217,19 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     maxima_minima_plot(arr_y, max_min_y);
     maxima_minima_plot(arr_x, max_min_x);
 
-    // +10 here and +5 when we compare to keep 5 blank spaces below and above the data points
+    // +10 here and +5 when we compare to keep 5 blank spaces 
+    //  below and above the data points
 
     int ROW = max_min_y[1] - max_min_y[0] + 10;
-    int COLUMN = max_min_x[1] - max_min_x[0] + 10;
+    int COLUMN = max_min_x[1] - max_min_x[0] + 5;
 
     int X_CENTER = 0, Y_CENTER = ROW - 1;
 
     for (int row = 0; row < ROW; row++) {                               // row is y value
         for (int column = 0; column < COLUMN; column++) {               // column is x value
+
+            int current_x = column - X_CENTER;                          // convert the row and column value
+            int current_y = -row + Y_CENTER;                            // to actual points
 
             if (row == Y_CENTER && column == X_CENTER) {
                 printf("O");
@@ -236,26 +240,27 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
                 continue;
             }
             if (column == X_CENTER) {
+                if (row == ROW - 5 || row == 4) {
+                    printf("%d", current_y + (int)max_min_y[0] - 5);
+                    continue;
+                }
                 printf("|");
                 continue;
             }
 
-            int current_x = column - X_CENTER;                          // convert the row and column value
-            int current_y = -row + Y_CENTER;                            // to actual points
-
             if (plotID == 'E' || plotID == 'H' || plotID == 'P') {
-                if (current_x == (int)(specialLines[1] - max_min_x[0] + 5) && current_y == (int)(specialLines[0] - max_min_y[0] + 5)) {
+                if (current_x == (int)(specialLines[1] - max_min_x[0] + 1) && current_y == (int)(specialLines[0] - max_min_y[0] + 5)) {
                     printf("%c ", plotID);
                     continue;
                 }
             }
 
             if (plotID == 'O') {
-                if (current_x == (int)(arr_x[1] - max_min_x[0] + 5) || current_x == (int)(specialLines[1] - max_min_x[0] + 5)) {
+                if (current_x == (int)(arr_x[1] - max_min_x[0] + 1) || current_x == (int)(specialLines[1] - max_min_x[0])) {
                     printf("+ ");
                     continue;
                 }
-                if (current_x < (int)(arr_x[1] - max_min_x[0] + 5) || current_x >(int)(specialLines[1] - max_min_x[0] + 5)) {
+                if (current_x < (int)(arr_x[1] - max_min_x[0] + 1) || current_x >(int)(specialLines[1] - max_min_x[0])) {
                     printf("U ");
                     continue;
                 }
@@ -263,7 +268,7 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
 
             int flag = 0;
             for (int i = 0; i < dataCount; i++) {
-                if (current_x == (int)(arr_x[i] - max_min_x[0] + 5) && current_y == (int)(arr_y[i] - max_min_y[0] + 5)) {
+                if (current_x == (int)(arr_x[i] - max_min_x[0] + 1) && current_y == (int)(arr_y[i] - max_min_y[0] + 5)) {
                     printf("● ");
                     flag = 1;
                     break;
