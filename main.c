@@ -15,6 +15,21 @@ int getch(void);
 #define SHOULD_SCALE_WHEN_STD_X 5
 #define SHOULD_SCALE_WHEN_STD_Y 1
 
+void addSpaces(void);
+void clearConsole(void);
+void pressAnyKeytoContinue(void);
+void maxima_minima_plot(float* array, float* result);
+void cavitationOnset(float* flowRate, float* head, float* result);
+void overloadCondition(float* flowRate, float* power, float* result);
+void plot(float* arr_x, float* arr_y, float* specialLines, char plotID);
+void sort(float* flowRate, float* head, float* power, float* efficiency);
+void minima_maxima(float* flowRate, float* power_head_eff, float* result);
+void showTable(float* flowRate, float* head, float* power, float* efficiency);
+void summaryTable(float* flowRate, float* head, float* power, float* efficiency);
+void generateReport(float* flowRate, float* head, float* power, float* efficiency);
+float average(float* points);
+float standard_deviation(float* array);
+
 int dataCount = 0;
 
 struct data {
@@ -23,20 +38,6 @@ struct data {
     float power[110];
     float efficiency[110];
 };
-
-void addSpaces(void);
-void clearConsole(void);
-void pressAnyKeytoContinue(void);
-void maxima_minima_plot(float* array, float* result);
-void cavitationOnset(float* flowRate, float* head, float* result);
-void overloadCondition(float* flowRate, float* power, float* result);
-void plot(float* arr_x, float* arr_y, float* specialLines, char plotID);
-void minima_maxima(float* flowRate, float* power_head_eff, float* result);
-void showTable(float* flowRate, float* head, float* power, float* efficiency);
-void summaryTable(float* flowRate, float* head, float* power, float* efficiency);
-void generateReport(float* flowRate, float* head, float* power, float* efficiency);
-float average(float* points);
-float standard_deviation(float* array);
 
 int main() {
     FILE* f1;
@@ -76,6 +77,8 @@ int main() {
                 }
                 dataCount++;
             }
+
+            sort(pump.flowRate, pump.head, pump.power, pump.efficiency);
 
             int input2 = 0;
             while (1) {
@@ -195,7 +198,7 @@ int main() {
 void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     clearConsole();
 
-    // scaling for y axis 
+    // scaling for y axis
 
     float std_y = standard_deviation(arr_y);
     float multiplying_factor = (std_y < SHOULD_SCALE_WHEN_STD_Y) ? EXPECTED_STANDARD_DEVIATION / std_y : 1;
@@ -204,7 +207,7 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
         arr_y[i] *= multiplying_factor;
     }
 
-    // scaling for x axis 
+    // scaling for x axis
 
     float std_x = standard_deviation(arr_x);
     multiplying_factor = (std_x < SHOULD_SCALE_WHEN_STD_X) ? EXPECTED_STANDARD_DEVIATION / std_x : 1;
@@ -217,13 +220,13 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     maxima_minima_plot(arr_y, max_min_y);
     maxima_minima_plot(arr_x, max_min_x);
 
-    // +10 here and +5 when we compare to keep 5 blank spaces 
-    //  below and above the data points
+    int yAxisStartFrom = (max_min_y[0] > 5) ? 5 : 1;
 
-    int ROW = max_min_y[1] - max_min_y[0] + 10;
+    int ROW = max_min_y[1] - max_min_y[0] + yAxisStartFrom + 5;
     int COLUMN = max_min_x[1] - max_min_x[0] + 5;
 
-    int X_CENTER = 0, Y_CENTER = ROW - 1;
+
+    int X_CENTER = 2, Y_CENTER = ROW - 1;
 
     for (int row = 0; row < ROW; row++) {                               // row is y value
         for (int column = 0; column < COLUMN; column++) {               // column is x value
@@ -240,36 +243,43 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
                 continue;
             }
             if (column == X_CENTER) {
-                if (row == ROW - 5 || row == 4) {
-                    printf("%d", current_y + (int)max_min_y[0] - 5);
-                    continue;
-                }
+
                 printf("|");
                 continue;
             }
+            if (row <= ROW - 3 && row >= 4 && !(row % 4)) {
+                if (column == 0) {              // 4 because we are taking 2 characters/block
+                    printf("%4d", current_y + (int)max_min_y[0] - yAxisStartFrom);
+                    continue;
+                }
+                if (column == 1) continue;
+                if (column == 2) continue;
+            }
 
             if (plotID == 'E' || plotID == 'H' || plotID == 'P') {
-                if (current_x == (int)(specialLines[1] - max_min_x[0] + 1) && current_y == (int)(specialLines[0] - max_min_y[0] + 5)) {
+                if (current_x == (int)(specialLines[1] - max_min_x[0] + 1) && current_y == (int)(specialLines[0] - max_min_y[0] + yAxisStartFrom)) {
                     printf("%c ", plotID);
                     continue;
                 }
             }
 
             if (plotID == 'O') {
-                if (current_x == (int)(arr_x[1] - max_min_x[0] + 1) || current_x == (int)(specialLines[1] - max_min_x[0])) {
+                if (current_x == (int)(arr_x[1] - max_min_x[0] + 1) || current_x == (int)(specialLines[1] - max_min_x[0] + 1)) {
                     printf("+ ");
                     continue;
                 }
-                if (current_x < (int)(arr_x[1] - max_min_x[0] + 1) || current_x >(int)(specialLines[1] - max_min_x[0])) {
-                    printf("U ");
-                    continue;
+                if (current_x < (int)(arr_x[1] - max_min_x[0] + 1) || current_x >(int)(specialLines[1] - max_min_x[0] + 1)) {
+                    if (current_x > 0) {
+                        printf("U ");
+                        continue;
+                    }
                 }
             }
 
             int flag = 0;
             for (int i = 0; i < dataCount; i++) {
-                if (current_x == (int)(arr_x[i] - max_min_x[0] + 1) && current_y == (int)(arr_y[i] - max_min_y[0] + 5)) {
-                    printf("● ");
+                if (current_x == (int)(arr_x[i] - max_min_x[0] + 1) && current_y == (int)(arr_y[i] - max_min_y[0] + yAxisStartFrom)) {
+                    printf("● ");       // use * for codeblocks
                     flag = 1;
                     break;
                 }
@@ -282,6 +292,24 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     }
 
     printf("\n");
+}
+
+void sort(float* flowRate, float* head, float* power, float* efficiency) {
+    for (int i = 1; i < dataCount; i++) {
+        float cFR = flowRate[i], cH = head[i], cP = power[i], cE = efficiency[i];
+        int j = i;
+        for (; cFR < flowRate[j - 1] && j > 0; j--) {
+            flowRate[j] = flowRate[j - 1];
+
+            head[j] = head[j - 1];
+            power[j] = power[j - 1];
+            efficiency[j] = efficiency[j - 1];
+        }
+        flowRate[j] = cFR;
+        head[j] = cH;
+        power[j] = cP;
+        efficiency[j] = cE;
+    }
 }
 
 void minima_maxima(float* flowRate, float* power_head_eff, float* result) {
