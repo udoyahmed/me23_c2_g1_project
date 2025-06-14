@@ -11,9 +11,9 @@ int getch(void);
 
 // comment these lines above for windows / codeblocks
 
-#define EXPECTED_STANDARD_DEVIATION 10
-#define SHOULD_SCALE_WHEN_STD_X 5
-#define SHOULD_SCALE_WHEN_STD_Y 1
+#define TARGET_STANDARD_DEVIATION 10
+#define SCALE_X_WHEN_STD_BELOW 5
+#define SCALE_Y_WHNE_STD_BELOW 1
 
 void addSpaces(void);
 void clearConsole(void);
@@ -199,21 +199,19 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     clearConsole();
 
     // scaling for y axis
-
     float std_y = standard_deviation(arr_y);
-    float multiplying_factor = (std_y < SHOULD_SCALE_WHEN_STD_Y) ? EXPECTED_STANDARD_DEVIATION / std_y : 1;
+    float multiplying_factor_y = (std_y < SCALE_Y_WHNE_STD_BELOW) ? TARGET_STANDARD_DEVIATION / std_y : 1;
 
     for (int i = 0; i < dataCount; i++) {
-        arr_y[i] *= multiplying_factor;
+        arr_y[i] *= multiplying_factor_y;
     }
 
     // scaling for x axis
-
     float std_x = standard_deviation(arr_x);
-    multiplying_factor = (std_x < SHOULD_SCALE_WHEN_STD_X) ? EXPECTED_STANDARD_DEVIATION / std_x : 1;
+    float multiplying_factor_x = (std_x < SCALE_X_WHEN_STD_BELOW) ? TARGET_STANDARD_DEVIATION / std_x : 1;
 
     for (int i = 0; i < dataCount; i++) {
-        arr_x[i] *= multiplying_factor;
+        arr_x[i] *= multiplying_factor_x;
     }
 
     float max_min_y[3], max_min_x[3];
@@ -225,14 +223,13 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
     int ROW = max_min_y[1] - max_min_y[0] + yAxisStartFrom + 5;
     int COLUMN = max_min_x[1] - max_min_x[0] + 5;
 
-
     int X_CENTER = 2, Y_CENTER = ROW - 1;
 
-    for (int row = 0; row < ROW; row++) {                               // row is y value
-        for (int column = 0; column < COLUMN; column++) {               // column is x value
+    for (int row = 0; row < ROW; row++) {
+        for (int column = 0; column < COLUMN; column++) {
 
-            int current_x = column - X_CENTER;                          // convert the row and column value
-            int current_y = -row + Y_CENTER;                            // to actual points
+            int current_x = column - X_CENTER;
+            int current_y = -row + Y_CENTER;
 
             if (row == Y_CENTER && column == X_CENTER) {
                 printf("O");
@@ -243,13 +240,13 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
                 continue;
             }
             if (column == X_CENTER) {
-
                 printf("|");
                 continue;
             }
+
             if (row <= ROW - 3 && row >= 4 && !(row % 4)) {
-                if (column == 0) {              // 4 because we are taking 2 characters/block
-                    printf("%4d", current_y + (int)max_min_y[0] - yAxisStartFrom);
+                if (column == 0) {
+                    printf("%4.0f", (current_y + max_min_y[0] - yAxisStartFrom) / multiplying_factor_y);
                     continue;
                 }
                 if (column == 1) continue;
@@ -257,18 +254,23 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
             }
 
             if (plotID == 'E' || plotID == 'H' || plotID == 'P') {
-                if (current_x == (int)(specialLines[1] - max_min_x[0] + 1) && current_y == (int)(specialLines[0] - max_min_y[0] + yAxisStartFrom)) {
+                int special_x = (int)((specialLines[1] * multiplying_factor_x) - max_min_x[0] + 1);
+                int special_y = (int)((specialLines[0] * multiplying_factor_y) - max_min_y[0] + yAxisStartFrom);
+                if (current_x == special_x && current_y == special_y) {
                     printf("%c ", plotID);
                     continue;
                 }
             }
 
             if (plotID == 'O') {
-                if (current_x == (int)(arr_x[1] - max_min_x[0] + 1) || current_x == (int)(specialLines[1] - max_min_x[0] + 1)) {
+                int range_start = (int)(arr_x[1] - max_min_x[0] + 1);
+                int range_end = (int)((specialLines[0] * multiplying_factor_x) - max_min_x[0] + 1);
+
+                if (current_x == range_start || current_x == range_end) {
                     printf("+ ");
                     continue;
                 }
-                if (current_x < (int)(arr_x[1] - max_min_x[0] + 1) || current_x >(int)(specialLines[1] - max_min_x[0] + 1)) {
+                if (current_x < range_start || current_x > range_end) {
                     if (current_x > 0) {
                         printf("U ");
                         continue;
@@ -278,8 +280,10 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
 
             int flag = 0;
             for (int i = 0; i < dataCount; i++) {
-                if (current_x == (int)(arr_x[i] - max_min_x[0] + 1) && current_y == (int)(arr_y[i] - max_min_y[0] + yAxisStartFrom)) {
-                    printf("● ");       // use * for codeblocks
+                int adjusted_x = (int)(arr_x[i] - max_min_x[0]) + 1;
+                int adjusted_y = (int)(arr_y[i] - max_min_y[0]) + yAxisStartFrom;
+                if (current_x == adjusted_x && current_y == adjusted_y) {
+                    printf("● ");  // or * for codeblocks
                     flag = 1;
                     break;
                 }
@@ -293,6 +297,7 @@ void plot(float* arr_x, float* arr_y, float* specialLines, char plotID) {
 
     printf("\n");
 }
+
 
 void sort(float* flowRate, float* head, float* power, float* efficiency) {
     for (int i = 1; i < dataCount; i++) {
@@ -438,12 +443,21 @@ void summaryTable(float* flowRate, float* head, float* power, float* efficiency)
     printf("| Shut-off Condition        | %6.2f m   |\n", head[0]);
 
     overloadCondition(flowRate, power, temp_result);
-
-    printf("| Overload Start Flowrate   | %6.2f L/s |\n", temp_result[1]);
+    if (temp_result[1] != flowRate[dataCount - 1]) {
+        printf("| Overload Start Flowrate   | %6.2f L/s |\n", temp_result[1]);
+    }
+    else {
+        printf("| Overload Start Flowrate   |     NA     | \n");
+    }
 
     cavitationOnset(flowRate, head, temp_result);
+    if (temp_result[1] != flowRate[dataCount - 1]) {
+        printf("| Cavitation Onset Flowrate | %6.2f L/s |\n", temp_result[1]);
+    }
+    else {
+        printf("| Cavitation Onset Flowrate |     NA     | \n");
+    }
 
-    printf("| Cavitation Onset Flowrate | %6.2f L/s |\n", temp_result[1]);
     printf("+---------------------------+------------+\n");
 }
 
@@ -487,12 +501,21 @@ void generateReport(float* flowRate, float* head, float* power, float* efficienc
     fprintf(f2, "| Shut-off Condition        | %6.2f m   |\n", head[0]);
 
     overloadCondition(flowRate, power, temp_result);
-
-    fprintf(f2, "| Overload Start Flowrate   | %6.2f L/s |\n", temp_result[1]);
+    if (temp_result[1] != flowRate[dataCount - 1]) {
+        fprintf(f2, "| Overload Start Flowrate   | %6.2f L/s |\n", temp_result[1]);
+    }
+    else {
+        fprintf(f2, "| Overload Start Flowrate   |     NA     | \n");
+    }
 
     cavitationOnset(flowRate, head, temp_result);
+    if (temp_result[1] != flowRate[dataCount - 1]) {
+        fprintf(f2, "| Cavitation Onset Flowrate | %6.2f L/s |\n", temp_result[1]);
+    }
+    else {
+        fprintf(f2, "| Cavitation Onset Flowrate |     NA     | \n");
+    }
 
-    fprintf(f2, "| Cavitation Onset Flowrate | %6.2f L/s |\n", temp_result[1]);
     fprintf(f2, "+---------------------------+------------+\n");
 
     fclose(f2);
